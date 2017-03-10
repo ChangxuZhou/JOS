@@ -9,9 +9,9 @@ KERNEL_STACK:
 
 
 			.text
-LEAF(_start)           /*在asm.h中定义的叶子函数，叶子函数不调用其它函数*/              
+LEAF(_start)
 	
-	.set	mips2      /*.set用于指导汇编器如何工作，控制指令执行顺序*/
+	.set	mips2
 	.set	reorder
 
 	/* Disable interrupts */
@@ -26,14 +26,13 @@ LEAF(_start)           /*在asm.h中定义的叶子函数，叶子函数不调�
 	and	t0, ~0x7
 	ori	t0, 0x2
 	mtc0	t0, CP0_CONFIG
-	
-/*To do: 
-  set up stack 
-  you can reference the memory layout in the include/mmu.h
-*/
 
-			
+	add     sp, zero, zero
+	lui     sp, 0x8040
+
+	j       main
+	nop
 loop:
 	j	loop
 	nop
-END(_start)            /*��asm.h�ж���ĺ���*/
+END(_start)
