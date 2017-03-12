@@ -11,11 +11,17 @@
 
 #include <printf.h>
 #include <print.h>
+
+#ifdef __x86_64__
+
+#include "../test.h"
+
+#else
 #include <drivers/gxconsole/dev_cons.h>
-
-
+#endif
 
 void printcharc(char ch);
+
 
 void halt(void);
 
@@ -32,7 +38,12 @@ static void myoutput(void *arg, char *s, int l)
     }
 }
 
+#ifdef __x86_64__
+
+void _printf(char *fmt, ...)
+#else
 void printf(char *fmt, ...)
+#endif
 {
     va_list ap;
     va_start(ap, fmt);

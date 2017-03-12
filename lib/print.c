@@ -108,13 +108,10 @@ lp_Print(void (*output)(void *, char *, int),
         }
         if (*fmt == '.') {
             fmt++;
-            if (IsDigit(*fmt)) {
-                prec = 0;
-                while (IsDigit(*fmt)) {
-                    prec *= 10;
-                    prec += Ctod(*fmt);
-                    fmt++;
-                }
+            while (IsDigit(*fmt)) {
+                prec *= 10;
+                prec += Ctod(*fmt);
+                fmt++;
             }
         }
         if (*fmt == '*') {
@@ -124,11 +121,9 @@ lp_Print(void (*output)(void *, char *, int),
             fmt++;
             if (*fmt == 'o') {
                 OUTPUT(arg, "0", 1);
-            }
-            else if (*fmt == 'x') {
+            } else if (*fmt == 'x') {
                 OUTPUT(arg, "0x", 2);
-            }
-            else if (*fmt == 'X') {
+            } else if (*fmt == 'X') {
                 OUTPUT(arg, "0X", 2);
             }
         }
@@ -146,6 +141,8 @@ lp_Print(void (*output)(void *, char *, int),
                 OUTPUT(arg, buf, length);
                 break;
 
+            case 'I':
+            case 'i':
             case 'd':
             case 'D':
                 if (longFlag) {

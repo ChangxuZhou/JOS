@@ -13,8 +13,14 @@
 #define _printf_h_
 
 #include <stdarg.h>
-void printf(char *fmt, ...);
 
+#ifdef __x86_64__
+
+void _printf(char *fmt, ...);
+
+#else
+void printf(char *fmt, ...);
+#endif
 void _panic(const char *, int, const char *, ...) 
 	__attribute__((noreturn));
 
