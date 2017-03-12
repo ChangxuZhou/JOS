@@ -30,7 +30,7 @@ LEAF(_start)
 	add     sp, zero, zero
 	lui     sp, 0x8040
 
-	j       main
+	jal     main
 	nop
 loop:
 	j	loop
