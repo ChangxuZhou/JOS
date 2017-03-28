@@ -15,7 +15,13 @@
 int main()
 {
 	printf("main.c:\tmain is start ...\n");
+
+    int a = 21;
+    printf("%t %T\n", a, a);
+
 	mips_init();
+
+
 	panic("main is over is error!");
 	return 0;
 }
