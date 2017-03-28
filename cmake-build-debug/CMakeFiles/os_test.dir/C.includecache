@@ -1,0 +1,40 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../include/print.h
+stdarg.h
+-
+
+../include/printf.h
+stdarg.h
+-
+
+/home/tonny/15231099-lab/lib/print.c
+print.h
+-
+
+/home/tonny/15231099-lab/lib/printf.c
+printf.h
+-
+print.h
+-
+../test.h
+/home/tonny/15231099-lab/test.h
+drivers/gxconsole/dev_cons.h
+-
+
+/home/tonny/15231099-lab/test.c
+printf.h
+-
+stdio.h
+-
+
+/home/tonny/15231099-lab/test.h
+stdio.h
+-
+
