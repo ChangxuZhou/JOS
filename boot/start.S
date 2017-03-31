@@ -21,10 +21,10 @@ NESTED(except_vec3, 0, sp)
 		 * which registers really need to be saved.
 		 */
 1:	//j	1b
-	nop
+	//nop
 
 		mfc0	k1,CP0_CAUSE
-		//la	k0,exception_handlers
+		la	k0,exception_handlers
 		/*
 		 * Next lines assumes that the used CPU type has max.
 		 * 32 different types of exceptions. We might use this
