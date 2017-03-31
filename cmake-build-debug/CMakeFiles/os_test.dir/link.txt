@@ -1,1 +1,0 @@
-/usr/bin/cc  -g   CMakeFiles/os_test.dir/lib/print.c.o CMakeFiles/os_test.dir/lib/printf.c.o CMakeFiles/os_test.dir/test.c.o  -o os_test -rdynamic 

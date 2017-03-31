@@ -1,3 +1,0 @@
-/home/tonny/15231099-lab/cmake-build-debug/CMakeFiles/edit_cache.dir
-/home/tonny/15231099-lab/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/home/tonny/15231099-lab/cmake-build-debug/CMakeFiles/nouse.dir
