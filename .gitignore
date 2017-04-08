@@ -3,3 +3,4 @@ CMakeLists.txt
 dummy.c
 emu
 .idea/*
+*.o
