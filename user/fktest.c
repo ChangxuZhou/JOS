@@ -7,6 +7,7 @@ void umain()
 	int id = 0;
 
 	if ((id = fork()) == 0) {
+
 		if ((id = fork()) == 0) {
 			a += 3;
 

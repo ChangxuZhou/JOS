@@ -11,6 +11,8 @@
  * Hints:
  *  The variable which is for counting should be defined as 'static'.
  */
+static int prev = -1;
+
 void sched_yield(void)
 {
     static int i = 0;
@@ -18,6 +20,15 @@ void sched_yield(void)
         i++;
         i = i % NENV;
         if (envs[i].env_status == ENV_RUNNABLE) {
+            /*if (i != prev) {
+                u_int j = 0xFFFFFF;
+                while (j--);
+                printf("\n************PID: %d : pc start @ [%8x]\n", i, envs[i].env_tf.pc);
+                prev = i;
+                j = 0xFFFFFF;
+                while (j--);
+            }
+*/
             env_run(&envs[i]);
             return;
         }

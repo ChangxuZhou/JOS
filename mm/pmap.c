@@ -327,7 +327,6 @@ int page_insert(Pde *pgdir, struct Page *pp, u_long va, u_int perm) {
     u_int PERM;
     Pte *pgtable_entry;
     PERM = perm | PTE_V;
-
     /* Step 1: Get corresponding page table entry. */
     pgdir_walk(pgdir, va, 0, &pgtable_entry);
 
