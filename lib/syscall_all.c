@@ -348,7 +348,7 @@ int sys_set_env_status(int sysno, u_int envid, u_int status)
         return -E_INVAL;
     }
 
-    ret = envid2env(envid, &env,0);
+    ret = envid2env(envid, &env, 0);
     if(ret < 0)
         return ret;
     env->env_status = status;
@@ -403,7 +403,7 @@ void sys_panic(int sysno, char *msg)
  */
 void sys_ipc_recv(int sysno, u_int dstva)
 {
-    if (dstva == NULL || dstva > UTOP) {
+    if (/*dstva == NULL || */dstva > UTOP) {
         return;
     }
 
@@ -438,11 +438,11 @@ int sys_ipc_can_send(int sysno, u_int envid, u_int value, u_int srcva,
 	struct Env *e;
 	struct Page *p;
 
-    if (srcva == 0) {
+    /*if (srcva == 0) {
         return -1;
-    }
+    }*/
 
-    r = envid2env(envid, &e, 1);
+    r = envid2env(envid, &e, 0);
     if (r < 0) {
         return -E_BAD_ENV;
     }
