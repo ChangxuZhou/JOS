@@ -199,7 +199,7 @@ fork(void)
     for (pn = 0; pn < (USTACKTOP / BY2PG) - 2; pn++) {
         if (((*vpd)[pn / PTE2PT]) != 0 && ((*vpt)[pn]) != 0) {
             duppage(envid, pn);
-            writef("Duplicate page [%8x] / [%8x]\n", pn, (USTACKTOP - BY2PG) / BY2PG);
+            //writef("Duplicate page [%8x] / [%8x]\n", pn, (USTACKTOP - BY2PG) / BY2PG);
         }
     }
 
@@ -221,7 +221,7 @@ fork(void)
         return ret;
     }
 
-    writef("********Fork end new pid %d\n", ENVX(envid));
+    //writef("********Fork end new pid %d\n", ENVX(envid));
 	return envid;
 }
 
