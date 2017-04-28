@@ -1,7 +1,5 @@
-cmake-build-debug/*
-CMakeLists.txt
-dummy.c
-emu
-.idea/*
+*~
 *.o
-gxemul/fs.img
+vmlinux
+*.x
+*.b
