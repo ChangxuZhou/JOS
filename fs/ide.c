@@ -55,14 +55,25 @@ ide_read(u_int diskno, u_int secno, void *dst, u_int nsecs)
 void
 ide_write(u_int diskno, u_int secno, void *src, u_int nsecs)
 {
-	int offset_begin = ;
-	int offset_end = ;
-	int offset = ;
+	int offset_begin = secno * 0x200;
+	int offset_end = offset_begin + nsecs * 0x200;
+	int offset = 0;
 	writef("diskno: %d\n", diskno);
-	while ( < ) {
-		// copy data from source array to disk buffer.
 
-        // if error occur, then panic.
+
+	while (offset_begin + offset < offset_end) {
+        //writef("ide_write va : [%08x], offset_end : [%08x]\n", src + offset, offset_end);
+		// copy data from source array to disk buffer.
+		user_bcopy(src + offset, (void *)0x93004000, 0x200);
+
+		if (write_sector(diskno, offset_begin + offset)) {
+			offset += 0x200;
+		} else {
+			// if error occur, then panic.
+			user_panic("disk I/O error");
+		}
 	}
+
+    //writef("\tide_write***\n");
 }
 

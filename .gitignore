@@ -4,3 +4,4 @@ dummy.c
 emu
 .idea/*
 *.o
+gxemul/fs.img

@@ -195,14 +195,35 @@ read(int fdnum, void *buf, u_int n)
 	int r;
 	struct Dev *dev;
 	struct Fd *fd;
-
 	// Step 1: Get fd and dev.
 
+    r = fd_lookup(fdnum, &fd);
+    if (r < 0) {
+        writef("[ERR] fd.c : read : fd_lookup : %d", r);
+        return r;
+    }
+
+    r = dev_lookup(fd->fd_dev_id, &dev);
+    if (r < 0) {
+        writef("[ERR] fd.c : read : dev_lookup : %d", r);
+        return r;
+    }
 	// Step 2: Check open mode.
+	if ((fd->fd_omode & O_ACCMODE) == O_WRONLY) {
+		writef("[%08x] write %d -- bad mode\n", env->env_id, fdnum);
+		return -E_INVAL;
+	}
 
 	// Step 3: Read starting from seek position.
+	r = (*dev->dev_read)(fd, buf, n, fd->fd_offset);
 
 	// Step 4: Update seek position and set '\0' at the end of buf.
+	if (r > 0) {
+		fd->fd_offset += r;
+	}
+
+    //writef("[LOG] fd.c : read length : %d \n", fd->fd_offset);
+    ((char *)buf)[fd->fd_offset % 512] = '\0';
 
 	return r;
 }

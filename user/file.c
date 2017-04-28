@@ -34,24 +34,35 @@ open(const char *path, int mode)
 	u_int va;
 	u_int i;
 
-	// Step 1: Alloc a new Fd, return error code when fail to alloc.
-	// Hint: Please use fd_alloc.
+    // Step 1: Alloc a new Fd, return error code when fail to alloc.
+    // Hint: Please use fd_alloc.
+    r = fd_alloc(&fd);
+    if (r < 0) {
+        return r;
+    }
 
-
-	// Step 2: Get the file descriptor of the file to open.
-
+    // Step 2: Get the file descriptor of the file to open.
+    r = fsipc_open(path, mode, fd);
+    if (r < 0) {
+        return r;
+    }
 
 	// Step 3: Set the start address storing the file's content. Set size and fileid correctly.
 	// Hint: Use fd2data to get the start address.
-
-
+    va = fd2data(fd);
+    ffd = (struct Filefd *)fd;
 	// Step 4: Map the file content into memory.
-
+    for (i = 0; i < ffd->f_file.f_size; i += BY2PG) {
+        r = fsipc_map(ffd->f_fileid, i, va + i);
+        if (r < 0) {
+            writef("[ERR] file.c : open() : fsipc_map \n");
+            return r;
+        }
+    }
 
 	// Step 5: Return file descriptor.
 	// Hint: Use fd2num.
-
-	
+    return fd2num(fd);
 }
 
 // Overview:
@@ -251,7 +262,7 @@ ftruncate(int fdnum, u_int size)
 int
 remove(const char *path)
 {
-	// Your code here.
+	return fsipc_remove(path);
 }
 
 // Overview:

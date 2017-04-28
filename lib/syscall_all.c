@@ -403,10 +403,9 @@ void sys_panic(int sysno, char *msg)
  */
 void sys_ipc_recv(int sysno, u_int dstva)
 {
-    if (/*dstva == NULL || */dstva > UTOP) {
-        return;
-    }
-
+    //if (/*dstva == NULL || */dstva > UTOP) {
+    //    return;
+    //}
     curenv->env_ipc_dstva = dstva;
     curenv->env_ipc_recving = 1;
     curenv->env_status = ENV_NOT_RUNNABLE;
@@ -449,6 +448,12 @@ int sys_ipc_can_send(int sysno, u_int envid, u_int value, u_int srcva,
 
     if (!e->env_ipc_recving) {
         return -E_IPC_NOT_RECV;
+    }
+
+    if (srcva != 0 && e->env_ipc_dstva != 0) {
+        p = page_lookup(curenv->env_pgdir, srcva, 0);
+        page_insert(e->env_pgdir, p, e->env_ipc_dstva, perm);
+        e->env_ipc_perm = perm;
     }
 
     e->env_ipc_recving = 0;
