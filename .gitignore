@@ -3,3 +3,6 @@
 vmlinux
 *.x
 *.b
+.idea/*
+cmake-build-debug/*
+emu
