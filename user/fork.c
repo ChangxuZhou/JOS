@@ -134,8 +134,8 @@ duppage(u_int envid, u_int pn)
     u_int perm = ((*vpt)[pn]) & 0xfff;
 
     if (perm & PTE_LIBRARY) {
-        writef("[LOG] duppage : PTE_LIBRARY\n");
-        r = syscall_mem_map(0, addr, envid, addr, perm & PTE_LIBRARY);
+        //writef("[LOG] duppage : PTE_LIBRARY [pn] [%08x]\n", pn);
+        r = syscall_mem_map(0, addr, envid, addr, PTE_R);
         if (r < 0) {
             writef("[ERR] duppage : syscall_mem_map #-1\n");
         }
@@ -199,7 +199,6 @@ fork(void)
     for (pn = 0; pn < (USTACKTOP / BY2PG) - 2; pn++) {
         if (((*vpd)[pn / PTE2PT]) != 0 && ((*vpt)[pn]) != 0) {
             duppage(envid, pn);
-            //writef("Duplicate page [%8x] / [%8x]\n", pn, (USTACKTOP - BY2PG) / BY2PG);
         }
     }
 

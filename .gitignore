@@ -6,3 +6,5 @@ vmlinux
 .idea/*
 cmake-build-debug/*
 emu
+CMakeLists.txt
+dummy.c

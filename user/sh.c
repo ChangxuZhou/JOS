@@ -77,6 +77,7 @@ gettoken(char *s, char **p1)
 }
 
 #define MAXARGS 16
+
 void
 runcmd(char *s)
 {
@@ -86,76 +87,96 @@ runcmd(char *s)
 //	writef(" got into runcmd\n");
 	rightpipe = 0;
 	gettoken(s, 0);
-again:
+	again:
 	argc = 0;
 	for(;;){
 		c = gettoken(0, &t);
 		switch(c){
-		case 0:
-			goto runit;
-		case 'w':
-			if(argc == MAXARGS){
-				writef("too many arguments\n");
-				exit();
-			}
-			argv[argc++] = t;
-			break;
-		case '<':
-			if(gettoken(0, &t) != 'w'){
-				writef("syntax error: < not followed by word\n");
-				exit();
-			}
-		
-			fdnum = open(t,O_RDONLY);
-			dup(fdnum,0);
-			close(fdnum);
-			// Your code here -- open t for reading,
-			// dup it onto fd 0, and then close the fd you got.
-		//	user_panic("< redirection not implemented");
-			break;
-		case '>':
-			
+			case 0:
+				goto runit;
+			case 'w':
+				if(argc == MAXARGS){
+					writef("too many arguments\n");
+					exit();
+				}
+				argv[argc++] = t;
+				break;
+			case '<':
+				if(gettoken(0, &t) != 'w'){
+					writef("syntax error: < not followed by word\n");
+					exit();
+				}
+				fdnum = open(t, O_RDONLY);
+                if (fdnum < 0) {
+                    writef("[ERR] sh.c : runcmd : case < : open : err%d\n", fdnum);
+                    exit();
+                } else if (fdnum == 0) {
+                    writef("[ERR] sh.c : runcmd : case < : open : got a zero fdnum\n");
+                    exit();
+                }
+				r = dup(fdnum, 0);
+                if (r < 0) {
+                    writef("[ERR] sh.c : runcmd : case < : dup : err%d\n", r);
+                    exit();
+                }
+				close(fdnum);
+				break;
+			case '>':
+                if(gettoken(0, &t) != 'w'){
+                    writef("syntax error: < not followed by word\n");
+                    exit();
+                }
+                fdnum = open(t, O_WRONLY);
+                if (fdnum < 0) {
+                    writef("[ERR] sh.c : runcmd : case > : open : err%d\n", fdnum);
+                    exit();
+                } else if (fdnum == 1) {
+                    writef("[ERR] sh.c : runcmd : case > : open : got a `1` fdnum\n");
+                    exit();
+                }
+                r = dup(fdnum, 1);
+                if (r < 0) {
+                    writef("[ERR] sh.c : runcmd : case > : dup : err%d\n", r);
+                    exit();
+                }
+                close(fdnum);
+				break;
+			case '|':
+                r = pipe(p);
+                if (r < 0) {
+                    writef("[ERR] sh.c : runcmd : case | : pipe : err%d\n", r);
+                    exit();
+                }
+                rightpipe = fork();
+                if (rightpipe < 0) {
+                    writef("[ERR] sh.c : runcmd : case | : fork : err%d\n", r);
+                    exit();
+                }
 
-
-
-
-		//	writef("%s \n",t);
-			fdnum = open(t,O_RDWR);
-			dup(fdnum,1);
-			close(fdnum);
-			// Your code here -- open t for writing,
-			// dup it onto fd 1, and then close the fd you got.
-//			user_panic("> redirection not implemented");
-			break;
-		case '|':
-			
-
-
-
-
-
-				
-			// Your code here.
-			// 	First, allocate a pipe.
-			//	Then fork.
-			//	the child runs the right side of the pipe:
-			//		dup the read end of the pipe onto 0
-			//		close the read end of the pipe
-			//		close the write end of the pipe
-			//		goto again, to parse the rest of the command line
-			//	the parent runs the left side of the pipe:
-			//		dup the write end of the pipe onto 1
-			//		close the write end of the pipe
-			//		close the read end of the pipe
-			//		set "rightpipe" to the child envid
-			//		goto runit, to execute this piece of the pipeline
-			//			and then wait for the right side to finish
-		//	user_panic("| not implemented");
-			break;
+                if (rightpipe == 0) {
+                    r = dup(p[0], 0);
+                    if (r < 0) {
+                        writef("[ERR] sh.c : runcmd : case | : child : dup : err%d\n", r);
+                        exit();
+                    }
+                    close(p[0]);
+                    close(p[1]);
+                    goto again;
+                } else {
+                    r = dup(p[1], 1);
+                    if (r < 0) {
+                        writef("[ERR] sh.c : runcmd : case | : parent : dup : err%d\n", r);
+                        exit();
+                    }
+                    close(p[0]);
+                    close(p[1]);
+                    goto runit;
+                }
+				break;
 		}
 	}
 
-runit:
+	runit:
 	if(argc == 0) {
 		if (debug) writef("EMPTY COMMAND\n");
 		return;
@@ -167,28 +188,20 @@ runit:
 			writef(" %s", argv[i]);
 		writef("\n");
 	}
-//	writef("1 argv[0] = %s argv = %d\n",argv[0],argv);
-
 	if ((r = spawn(argv[0], argv)) < 0)
 		writef("spawn %s: %e\n", argv[0], r);
-//	writef("2\n");
 	close_all();
 	if (r >= 0) {
 		if (debug) writef("[%08x] WAIT %s %08x\n", env->env_id, argv[0], r);
 		wait(r);
-	//	if (debug) writef("[%08x] wait finished\n", env->env_id);
 	}
 	if (rightpipe) {
 		if (debug) writef("[%08x] WAIT right-pipe %08x\n", env->env_id, rightpipe);
 		wait(rightpipe);
-	//	if (debug) writef("[%08x] wait finished\n", env->env_id);
 	}
-
-//	r = spawnl("/init", "init", "initarg1", "initarg2", (char*)0);
 	exit();
-//	wait(r);
-
 }
+
 
 void
 readline(char *buf, u_int n)

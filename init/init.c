@@ -9,18 +9,13 @@ void mips_init()
 {
 	printf("init.c:\tmips_init() is called\n");
 	mips_detect_memory();
-	
 	mips_vm_init();
 	page_init();
-
 	env_init();
 
-	/*you can create some processes(env) here. in terms of binary code, please refer current directory/code_a.c
-	 * code_b.c*/
-	/*you may want to create process by MACRO, please read env.h file, in which you will find it. this MACRO is very
-	 * interesting, have fun please*/
-	ENV_CREATE(user_fstest);
-	ENV_CREATE(fs_serv);	
+    ENV_CREATE(user_icode);
+	ENV_CREATE(fs_serv);
+
 	trap_init();
 	kclock_init();
 	panic("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");

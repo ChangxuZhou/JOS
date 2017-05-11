@@ -24,7 +24,6 @@ struct Dev devfile =
 int
 open(const char *path, int mode)
 {
-	// Your code here.
 	struct Fd *fd;
 	struct Filefd *ffd;
 	u_int size,fileid;
@@ -82,7 +81,6 @@ writef("open:come 2\n");
 int
 file_close(struct Fd *fd)
 {
-	// Your code here.
 	int r;
 	struct Filefd *ffd;
 	u_int va,size,fileid;
