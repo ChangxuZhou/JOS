@@ -101,7 +101,7 @@ serve_open(u_int envid, struct Fsreq_open *rq)
 	// Find a file id.
 	
 	if ((r = open_alloc(&o)) < 0) {
-		writef("open_alloc failed: %d", r);
+		writef("open_alloc failed: %d\n", r);
 		goto out;
 	}
 	fileid = r;
@@ -109,7 +109,7 @@ serve_open(u_int envid, struct Fsreq_open *rq)
 //writef("serve_open:ending find a file id	o = %x\n",o);
 	// Open the file.
 	if ((r = file_open(path, &f)) < 0) {
-		writef("file_open failed: %e", r);
+		writef("file_open failed: %e\n", r);
 		goto out;
 	}
 //writef("serve_open:ending open the file\n");
@@ -128,7 +128,8 @@ serve_open(u_int envid, struct Fsreq_open *rq)
 	ipc_send(envid, 0, (u_int)o->o_ff, PTE_V|PTE_R|PTE_LIBRARY);
 //writef("serve_open:end of open %s\n",rq->req_path);
 	return;
-out:user_panic("*********************path:%s",path);
+	out:
+	writef("[FS] Invalid path (error %d): %s\n", r, path);
 	ipc_send(envid, r, 0, 0);
 }
 

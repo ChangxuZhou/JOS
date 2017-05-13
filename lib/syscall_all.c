@@ -4,6 +4,7 @@
 #include <printf.h>
 #include <pmap.h>
 #include <sched.h>
+#include <kerelf.h>
 
 extern char *KERNEL_SP;
 extern struct Env *curenv;
@@ -327,6 +328,72 @@ int sys_env_alloc(void)
 	return e->env_id;
 }
 
+static int load_icode_mapper(u_long va, u_int32_t sgsize,
+                             u_char *bin, u_int32_t bin_size, void *user_data) {
+    struct Env *env = (struct Env *) user_data;
+    struct Page *p = NULL;
+    u_long i;
+    int r;
+    u_long offset = va - ROUNDDOWN(va, BY2PG);
+
+    //printf("\t\t\tcurrent offset %l8x\n", offset);
+    /*Step 1: load all content of bin into memory. */
+    for (i = 0; i < bin_size; i += BY2PG) {
+        /* Hint: You should alloc a page and increase the reference count of it. */
+        r = page_alloc(&p);
+        if (r < 0) {
+            panic("Allocate page failed.");
+            return r;
+        }
+
+        p->pp_ref++;
+
+        r = page_insert(env->env_pgdir, p, va - offset + i, PTE_V | PTE_R);
+        if (r < 0) {
+            panic("Insert page failed.");
+            return r;
+        }
+        bcopy(bin + i, (void *) page2kva(p) + offset, MIN(BY2PG, bin_size - i));
+    }
+    /*Step 2: alloc pages to reach `sgsize` when `bin_size` < `sgsize`.
+    * i has the value of `bin_size` now. */
+    while (i < sgsize) {
+        r = page_alloc(&p);
+        if (r < 0) {
+            panic("Allocate page failed.");
+            return r;
+        }
+        p->pp_ref++;
+
+        r = page_insert(env->env_pgdir, p, va - offset + i, PTE_V | PTE_R);
+        if (r < 0) {
+            panic("Insert page failed.");
+            return r;
+        }
+        i += BY2PG;
+    }
+    return 0;
+}
+
+int sys_env_spawn(int sysno, u_int envid, char *binary, u_int size, u_int esp) {
+    struct Env *e;
+    int r;
+    u_int entry_point;
+    r = envid2env(envid, &e, 1);
+    if (r < 0) {
+        printf("[ERR] sys_env_spawn : envid2env\n");
+        return r;
+    }
+
+    r = load_elf(binary, size, &entry_point, e, load_icode_mapper);
+    if (r < 0) {
+        panic("Load elf failed.");
+    }
+    e->env_tf.pc = entry_point;
+    e->env_tf.regs[29] = esp;
+    return 0;
+}
+
 /* Overview:
  * 	Set envid's env_status to status.
  *
@@ -403,12 +470,13 @@ void sys_panic(int sysno, char *msg)
  */
 void sys_ipc_recv(int sysno, u_int dstva)
 {
-    //if (/*dstva == NULL || */dstva > UTOP) {
+    //if (dstva > UTOP) {
     //    return;
     //}
     curenv->env_ipc_dstva = dstva;
     curenv->env_ipc_recving = 1;
     curenv->env_status = ENV_NOT_RUNNABLE;
+    printf("[LOG] yield\n");
     sys_yield();
 }
 
@@ -437,9 +505,9 @@ int sys_ipc_can_send(int sysno, u_int envid, u_int value, u_int srcva,
 	struct Env *e;
 	struct Page *p;
 
-    /*if (srcva == 0) {
+    if (srcva > UTOP) {
         return -1;
-    }*/
+    }
 
     r = envid2env(envid, &e, 0);
     if (r < 0) {
@@ -453,6 +521,7 @@ int sys_ipc_can_send(int sysno, u_int envid, u_int value, u_int srcva,
     if (srcva != 0 && e->env_ipc_dstva != 0) {
         p = page_lookup(curenv->env_pgdir, srcva, 0);
         page_insert(e->env_pgdir, p, e->env_ipc_dstva, perm);
+        printf("[IPC] map [%08x] to [%08x]\n", srcva, e->env_ipc_dstva);
         e->env_ipc_perm = perm;
     }
 

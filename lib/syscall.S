@@ -81,6 +81,7 @@ END(handle_sys)
 	.extern sys_ipc_can_send
 	.extern sys_ipc_recv
 	.extern sys_cgetc
+	.extern sys_env_spawn
 
 .macro syscalltable
 .word sys_putchar
@@ -98,6 +99,7 @@ END(handle_sys)
 .word sys_ipc_can_send
 .word sys_ipc_recv
 .word sys_cgetc
+.word sys_env_spawn
 .endm
 
 

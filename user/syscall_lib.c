@@ -15,7 +15,8 @@ u_int
 syscall_getenvid(void)
 {
 	return msyscall(SYS_getenvid,0,0,0,0,0);
-}
+}
+
 
 void
 syscall_yield(void)
@@ -28,7 +29,8 @@ void
 syscall_env_destroy(u_int envid)
 {
 	msyscall(SYS_env_destroy,envid,0,0,0,0);
-}
+}
+
 int
 syscall_set_pgfault_handler(u_int envid, u_int func, u_int xstacktop)
 {
@@ -46,13 +48,15 @@ syscall_mem_map(u_int srcid, u_int srcva, u_int dstid, u_int dstva, u_int perm)
 {
 	return msyscall(SYS_mem_map,srcid,srcva,dstid,dstva,perm);
 }
-
+
+
 int
 syscall_mem_unmap(u_int envid, u_int va)
 {
 	return msyscall(SYS_mem_unmap,envid,va,0,0,0);
 }
-
+
+
 int syscall_env_alloc(void)
 {
 	
@@ -96,4 +100,9 @@ int
 syscall_cgetc()
 {
 	msyscall(SYS_cgetc,0,0,0,0,0);
+}
+
+int
+syscall_env_spawn(u_int envid, char *binary, u_int size, u_int esp) {
+    msyscall(SYS_env_spawn, envid, binary, size, esp, 0);
 }

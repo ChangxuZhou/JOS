@@ -1,6 +1,7 @@
 // User-level IPC library routines
 
-#include "lib.h"#include <mmu.h>
+#include "lib.h"
+#include <mmu.h>
 #include <env.h>
 
 extern struct Env *env;
@@ -17,6 +18,7 @@ ipc_send(u_int whom, u_int val, u_int srcva, u_int perm)
 
 	while ((r=syscall_ipc_can_send(whom, val, srcva, perm)) == -E_IPC_NOT_RECV)
 	{
+        writef("process yield.\n");
 		syscall_yield();
 		//writef("QQ");
 	}
@@ -32,7 +34,6 @@ ipc_send(u_int whom, u_int val, u_int srcva, u_int perm)
 u_int
 ipc_recv(u_int *whom, u_int dstva, u_int *perm)
 {
-//printf("ipc_recv:come 0\n");
 	syscall_ipc_recv(dstva);
 	
 	if (whom)

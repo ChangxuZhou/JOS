@@ -135,7 +135,7 @@ duppage(u_int envid, u_int pn)
 
     if (perm & PTE_LIBRARY) {
         //writef("[LOG] duppage : PTE_LIBRARY [pn] [%08x]\n", pn);
-        r = syscall_mem_map(0, addr, envid, addr, PTE_R);
+        r = syscall_mem_map(0, addr, envid, addr, PTE_R | PTE_V | PTE_LIBRARY);
         if (r < 0) {
             writef("[ERR] duppage : syscall_mem_map #-1\n");
         }
