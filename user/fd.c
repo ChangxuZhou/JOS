@@ -12,8 +12,7 @@
 #define INDEX2FD(i)	(FDTABLE+(i)*BY2PG)
 #define INDEX2DATA(i)	(FILEBASE+(i)*PDMAP)
 
-static struct Dev *devtab[] =
-{
+static struct Dev *devtab[] = {
 	&devfile,
 	&devcons,
 	&devpipe,
@@ -24,12 +23,13 @@ int
 dev_lookup(int dev_id, struct Dev **dev)
 {
 	int i;
-	//writef("dev_lookup()VVVVVVVVVVVVVVVVVVVVVV\n");
-	for (i=0; devtab[i]; i++)
+
+    for (i = 0; devtab[i]; i++)
 		if (devtab[i]->dev_id == dev_id) {
 			*dev = devtab[i];
 			return 0;
 		}
+
 	writef("[%08x] unknown device type %d\n", env->env_id, dev_id);
 	return -E_INVAL;
 }
@@ -46,23 +46,21 @@ fd_alloc(struct Fd **fd)
 	// Return 0 on success, or an error code on error.
 	u_int va;
 	u_int fdno;
-//writef("enter fd_alloc\n");	
-	for(fdno = 0;fdno < MAXFD - 1;fdno++)
-	{
+
+    for (fdno = 0; fdno < MAXFD - 1; fdno++) {
 		va = INDEX2FD(fdno);
-		if(((* vpd)[va/PDMAP] & PTE_V)==0)
-		{
-			*fd = va;
+
+        if (((*vpd)[va / PDMAP] & PTE_V) == 0) {
+            *fd = (struct Fd *) va;
 			return 0;
 		}
-//writef("fd_alloc:va = %x\n",va);
-		if(((* vpt)[va/BY2PG] & PTE_V)==0)		//the fd is not used
-		{
-			*fd = va;
+
+        if (((*vpt)[va / BY2PG] & PTE_V) == 0) {    //the fd is not used
+            *fd = (struct Fd *) va;
 			return 0;
 		}
 	}
-	//user_panic("fd_alloc not implemented");
+
 	return -E_MAX_OPEN;
 }
 
@@ -78,17 +76,18 @@ fd_lookup(int fdnum, struct Fd **fd)
 	// Check that fdnum is in range and mapped.  If not, return -E_INVAL.
 	// Set *fd to the fd page virtual address.  Return 0.
 	u_int va;
-	
-	if(fdnum >=MAXFD)
+
+    if (fdnum >= MAXFD) {
 		return -E_INVAL;
+    }
 
 	va = INDEX2FD(fdnum);
-	if(((* vpt)[va/BY2PG] & PTE_V)!=0)		//the fd is used
-	{
-		*fd = va;
+
+    if (((*vpt)[va / BY2PG] & PTE_V) != 0) {    //the fd is used
+        *fd = (struct Fd *) va;
 		return 0;
 	}
-	//user_panic("fd_lookup not implemented");
+
 	return -E_INVAL;
 }
 
@@ -101,13 +100,12 @@ fd2data(struct Fd *fd)
 int
 fd2num(struct Fd *fd)
 {
-	return ((u_int)fd - FDTABLE)/BY2PG;
+    return ((u_int) fd - FDTABLE) / BY2PG;
 }
 int
 num2fd(int fd)
 {
-	return fd*BY2PG+FDTABLE;
-
+    return fd * BY2PG + FDTABLE;
 }
 
 int
@@ -118,8 +116,10 @@ close(int fdnum)
 	struct Fd *fd;
 
 	if ((r = fd_lookup(fdnum, &fd)) < 0
-	||  (r = dev_lookup(fd->fd_dev_id, &dev)) < 0)
+        || (r = dev_lookup(fd->fd_dev_id, &dev)) < 0) {
 		return r;
+    }
+
 	r = (*dev->dev_close)(fd);
 	fd_close(fd);
 	return r;
@@ -130,8 +130,9 @@ close_all(void)
 {
 	int i;
 
-	for (i=0; i<MAXFD; i++)
+    for (i = 0; i < MAXFD; i++) {
 		close(i);
+    }
 }
 
 int
@@ -140,61 +141,90 @@ dup(int oldfdnum, int newfdnum)
 	int i, r;
 	u_int ova, nva, pte;
 	struct Fd *oldfd, *newfd;
-	//writef("dup comes 1;\n");
-	if ((r = fd_lookup(oldfdnum, &oldfd)) < 0)
+
+    if ((r = fd_lookup(oldfdnum, &oldfd)) < 0) {
 		return r;
+    }
+
 	close(newfdnum);
-	//writef("dup comes 2;\n");
-	newfd = (struct Fd*)INDEX2FD(newfdnum);
+    newfd = (struct Fd *) INDEX2FD(newfdnum);
 	ova = fd2data(oldfd);
 	nva = fd2data(newfd);
 
-//writef("dup comes 2.5;\n");
+
 	if ((* vpd)[PDX(ova)]) {
-		for (i=0; i<PDMAP; i+=BY2PG) {
-			pte = (* vpt)[VPN(ova+i)];
-			if(pte&PTE_V) {
+        for (i = 0; i < PDMAP; i += BY2PG) {
+            pte = (*vpt)[VPN(ova + i)];
+
+            if (pte & PTE_V) {
 				// should be no error here -- pd is already allocated
-				if ((r = syscall_mem_map(0, ova+i, 0, nva+i, pte&(PTE_V|PTE_R|PTE_LIBRARY))) < 0)
+                if ((r = syscall_mem_map(0, ova + i, 0, nva + i,
+                                         pte & (PTE_V | PTE_R | PTE_LIBRARY))) < 0) {
 					goto err;
+                }
 			}
 		}
 	}
     if ((r = syscall_mem_map(0, (u_int) oldfd, 0, (u_int) newfd,
-                             ((*vpt)[VPN(oldfd)]) & (PTE_V | PTE_R | PTE_LIBRARY))) < 0)
+                             ((*vpt)[VPN(oldfd)]) & (PTE_V | PTE_R | PTE_LIBRARY))) < 0) {
         goto err;
-//writef("dup comes 3;\n");
+    }
 	return newfdnum;
 
 err:
-//writef("dup comes 4;\n");
 	syscall_mem_unmap(0, (u_int)newfd);
-	for (i=0; i<PDMAP; i+=BY2PG)
-		syscall_mem_unmap(0, nva+i);
+
+    for (i = 0; i < PDMAP; i += BY2PG) {
+        syscall_mem_unmap(0, nva + i);
+    }
+
 	return r;
 }
 
+// Overview:
+//	Read 'n' bytes from 'fd' at the current seek position into 'buf'.
+//
+// Post-Condition:
+//	Update seek position.
+//	Return the number of bytes read successfully.
+//		< 0 on error
 int
 read(int fdnum, void *buf, u_int n)
 {
-	int r;
-	struct Dev *dev;
-	struct Fd *fd;
-	//writef("read() come 1 %x\n",(int)env);
-	if ((r = fd_lookup(fdnum, &fd)) < 0
-	||  (r = dev_lookup(fd->fd_dev_id, &dev)) < 0)
-		return r;
-	//writef("read() come 2 %x\n",(int)env);
-	if ((fd->fd_omode & O_ACCMODE) == O_WRONLY) {
-		writef("[%08x] read %d -- bad mode\n", env->env_id, fdnum); 
-		return -E_INVAL;
-	}
-	//writef("read() come 3 %x\n",(int)env);
-	r = (*dev->dev_read)(fd, buf, n, fd->fd_offset);
-	if (r >= 0)
-		fd->fd_offset += r;
-	//writef("read() come 4 %x\n",(int)env);
-	return r;
+    int r;
+    struct Dev *dev;
+    struct Fd *fd;
+    // Step 1: Get fd and dev.
+
+    r = fd_lookup(fdnum, &fd);
+    if (r < 0) {
+        writef("[ERR] fd.c : read : fd_lookup : %d", r);
+        return r;
+    }
+
+    r = dev_lookup(fd->fd_dev_id, &dev);
+    if (r < 0) {
+        writef("[ERR] fd.c : read : dev_lookup : %d", r);
+        return r;
+    }
+    // Step 2: Check open mode.
+    if ((fd->fd_omode & O_ACCMODE) == O_WRONLY) {
+        writef("[%08x] write %d -- bad mode\n", env->env_id, fdnum);
+        return -E_INVAL;
+    }
+
+    // Step 3: Read starting from seek position.
+    r = (*dev->dev_read)(fd, buf, n, fd->fd_offset);
+
+    // Step 4: Update seek position and set '\0' at the end of buf.
+    if (r > 0) {
+        fd->fd_offset += r;
+    }
+
+    //writef("[LOG] fd.c : read length : %d \n", fd->fd_offset);
+    //((char *)buf)[fd->fd_offset % 512] = '\0';
+
+    return r;
 }
 
 int
@@ -202,13 +232,18 @@ readn(int fdnum, void *buf, u_int n)
 {
 	int m, tot;
 
-	for (tot=0; tot<n; tot+=m) {
-		m = read(fdnum, (char*)buf+tot, n-tot);
-		if (m < 0)
+    for (tot = 0; tot < n; tot += m) {
+        m = read(fdnum, (char *) buf + tot, n - tot);
+
+        if (m < 0) {
 			return m;
-		if (m == 0)
+        }
+
+        if (m == 0) {
 			break;
-	}
+        }
+    }
+
 	return tot;
 }
 
@@ -218,22 +253,26 @@ write(int fdnum, const void *buf, u_int n)
 	int r;
 	struct Dev *dev;
 	struct Fd *fd;
-	//writef("write comes 1\n");
+
 	if ((r = fd_lookup(fdnum, &fd)) < 0
-	||  (r = dev_lookup(fd->fd_dev_id, &dev)) < 0)
+        || (r = dev_lookup(fd->fd_dev_id, &dev)) < 0) {
 		return r;
-//writef("write comes 2\n");
+    }
+
 	if ((fd->fd_omode & O_ACCMODE) == O_RDONLY) {
 		writef("[%08x] write %d -- bad mode\n", env->env_id, fdnum);
 		return -E_INVAL;
 	}
-//writef("write comes 3\n");
+
 	if (debug) writef("write %d %p %d via dev %s\n",
-		fdnum, buf, n, dev->dev_name);
+                      fdnum, buf, n, dev->dev_name);
+
 	r = (*dev->dev_write)(fd, buf, n, fd->fd_offset);
-	if (r > 0)
+
+    if (r > 0) {
 		fd->fd_offset += r;
-//writef("write comes 4\n");
+    }
+
 	return r;
 }
 
@@ -242,12 +281,12 @@ seek(int fdnum, u_int offset)
 {
 	int r;
 	struct Fd *fd;
-	//writef("seek() come 1 %x\n",(int)env);
-	if ((r = fd_lookup(fdnum, &fd)) < 0)
+
+    if ((r = fd_lookup(fdnum, &fd)) < 0) {
 		return r;
-	//writef("seek() come 2 %x\n",(int)env);
+    }
+
 	fd->fd_offset = offset;
-	//writef("seek() come 3 %x\n",(int)env);
 	return 0;
 }
 
@@ -259,8 +298,10 @@ int fstat(int fdnum, struct Stat *stat)
 	struct Fd *fd;
 
 	if ((r = fd_lookup(fdnum, &fd)) < 0
-	||  (r = dev_lookup(fd->fd_dev_id, &dev)) < 0)
+        || (r = dev_lookup(fd->fd_dev_id, &dev)) < 0) {
 		return r;
+    }
+
 	stat->st_name[0] = 0;
 	stat->st_size = 0;
 	stat->st_isdir = 0;
@@ -273,8 +314,10 @@ stat(const char *path, struct Stat *stat)
 {
 	int fd, r;
 
-	if ((fd = open(path, O_RDONLY)) < 0)
+    if ((fd = open(path, O_RDONLY)) < 0) {
 		return fd;
+    }
+
 	r = fstat(fd, stat);
 	close(fd);
 	return r;

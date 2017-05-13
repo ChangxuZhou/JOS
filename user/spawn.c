@@ -101,7 +101,7 @@ int spawn(char *prog, char **argv) {
         return envid;
     }
 
-    //syscall_mem_unmap(envid, USTACKTOP - BY2PG);
+    syscall_mem_unmap(envid, USTACKTOP - BY2PG);
 
     r = init_stack(envid, argv, &esp);
     if (r < 0) {
@@ -112,32 +112,60 @@ int spawn(char *prog, char **argv) {
 
     size = ((struct Filefd *) num2fd(fd))->f_file.f_size;
 
-    char *bin = 0x70000000;
+    char *bin = 0x10000000;
     int bpage = size / BY2PG + 1;
     writef("Got a %d Byte binary, need %d page!\n", size, bpage);
     int i;
     for (i = 0; i <= bpage; i++) {
-        syscall_mem_alloc(0, bin + i * BY2PG, PTE_R);
+        r = syscall_mem_alloc(0, bin + i * BY2PG, PTE_R);
+        writef("[SPAWN] mem alloc [%08x] %d\n", bin + i * BY2PG, r);
         char buf[BY2PG];
         read(fd, buf, BY2PG);
         user_bcopy(buf, bin + i * BY2PG, BY2PG);
     }
+    writef("%c%c%c magic\n", bin[1], bin[2], bin[3]);
+    r = syscall_env_spawn(envid, bin, size, esp);
+    struct Trapframe *ctf = &(envs[ENVX(envid)].env_tf);
+    ctf->regs[29] = esp;
+    ctf->pc = UTEXT;
 
-    syscall_env_spawn(envid, bin, size, esp);
+    writef("[SPAWN] syscall %d\n", r);
 
     for (i = 0; i <= bpage; i++) {
-        syscall_mem_unmap(0, bin + i * BY2PG);
+        r = syscall_mem_unmap(0, bin + i * BY2PG);
+        writef("[SPAWN] mem unmap [%08x] %d\n", bin + i * BY2PG, r);
     }
 
-
-    int pn;
+    close(fd);
+/*    int pn;
     for (pn = 0; pn < (USTACKTOP / BY2PG) - 2; pn++) {
         if (((*vpd)[pn / PTE2PT]) != 0 && ((*vpt)[pn] & PTE_LIBRARY) != 0) {
             syscall_mem_map(0, pn * BY2PG, envid, pn * BY2PG, PTE_V | PTE_R | PTE_LIBRARY);
             writef("map page va [%08x]\n", pn * BY2PG);
         }
-    }
+    }*/
+    u_int pdeno = 0;
+    u_int pteno = 0;
+    u_int pn = 0;
+    u_int va = 0;
 
+    for (pdeno = 0; pdeno < PDX(UTOP); pdeno++) {
+        if (!((*vpd)[pdeno] & PTE_V))
+            continue;
+        for (pteno = 0; pteno <= PTX(~0); pteno++) {
+            pn = (pdeno << 10) + pteno;
+            if (((*vpt)[pn] & PTE_V) && ((*vpt)[pn] & PTE_LIBRARY)) {
+                va = pn * BY2PG;
+
+                if ((r = syscall_mem_map(0, va, envid, va, (PTE_V | PTE_R | PTE_LIBRARY))) < 0) {
+
+                    writef("va: %x   child_envid: %x   \n", va, envid);
+                    user_panic("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+                    return r;
+                }
+            }
+        }
+    }
 
     r = syscall_set_env_status(envid, ENV_RUNNABLE);
     if (r < 0) {

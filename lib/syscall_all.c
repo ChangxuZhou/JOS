@@ -388,9 +388,9 @@ int sys_env_spawn(int sysno, u_int envid, char *binary, u_int size, u_int esp) {
     r = load_elf(binary, size, &entry_point, e, load_icode_mapper);
     if (r < 0) {
         panic("Load elf failed.");
-    }
+    }/*
     e->env_tf.pc = entry_point;
-    e->env_tf.regs[29] = esp;
+    e->env_tf.regs[29] = esp;*/
     return 0;
 }
 
@@ -476,7 +476,7 @@ void sys_ipc_recv(int sysno, u_int dstva)
     curenv->env_ipc_dstva = dstva;
     curenv->env_ipc_recving = 1;
     curenv->env_status = ENV_NOT_RUNNABLE;
-    printf("[LOG] yield\n");
+    printf("[IPC] yield @ [%08x]\n", curenv->env_tf.pc);
     sys_yield();
 }
 
@@ -519,9 +519,9 @@ int sys_ipc_can_send(int sysno, u_int envid, u_int value, u_int srcva,
     }
 
     if (srcva != 0 && e->env_ipc_dstva != 0) {
+        printf("[IPC] map [%08x] to [%08x]\n", srcva, e->env_ipc_dstva);
         p = page_lookup(curenv->env_pgdir, srcva, 0);
         page_insert(e->env_pgdir, p, e->env_ipc_dstva, perm);
-        printf("[IPC] map [%08x] to [%08x]\n", srcva, e->env_ipc_dstva);
         e->env_ipc_perm = perm;
     }
 
