@@ -20,14 +20,14 @@ void sched_yield(void)
         i++;
         i = i % NENV;
         if (envs[i].env_status == ENV_RUNNABLE) {
-            if (i != prev) {
+            /*if (i != prev) {
                 u_int j = 0xFFF;
                 while (j--);
                 printf("\n************PID: %d : pc start @ [%8x]\n", i, envs[i].env_tf.pc);
                 prev = i;
                 j = 0xFFF;
                 while (j--);
-            }
+            }*/
 
             env_run(&envs[i]);
             return;

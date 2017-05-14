@@ -472,7 +472,7 @@ void sys_ipc_recv(int sysno, u_int dstva)
     curenv->env_ipc_dstva = dstva;
     curenv->env_ipc_recving = 1;
     curenv->env_status = ENV_NOT_RUNNABLE;
-    printf("[IPC] yield @ [%08x]\n", curenv->env_tf.pc);
+    //printf("[IPC] yield @ [%08x]\n", curenv->env_tf.pc);
     sys_yield();
 }
 
@@ -515,7 +515,7 @@ int sys_ipc_can_send(int sysno, u_int envid, u_int value, u_int srcva,
     }
 
     if (srcva != 0 && e->env_ipc_dstva != 0) {
-        printf("[IPC] map [%08x] to [%08x]\n", srcva, e->env_ipc_dstva);
+        //printf("[IPC] map [%08x] to [%08x]\n", srcva, e->env_ipc_dstva);
         p = page_lookup(curenv->env_pgdir, srcva, 0);
         page_insert(e->env_pgdir, p, e->env_ipc_dstva, perm);
         e->env_ipc_perm = perm;
