@@ -101,7 +101,35 @@ int spawn(char *prog, char **argv) {
         return envid;
     }
 
-    syscall_mem_unmap(envid, USTACKTOP - BY2PG);
+    Elf32_Ehdr ehdr;
+    readn(fd, &ehdr, sizeof(Elf32_Ehdr));
+    int ph_entry_count = ehdr.e_phnum;
+    seek(fd, ehdr.e_phoff);
+
+    while (ph_entry_count--) {
+        Elf32_Phdr phdr;
+        readn(fd, &phdr, ehdr.e_phentsize);
+        if (phdr.p_type != PT_LOAD)
+            continue;
+        u_int i;
+        for (i = 0; i < phdr.p_filesz; i += BY2PG) {
+            u_int va;
+            read_map(fd, phdr.p_offset + i, &va);
+            if (phdr.p_filesz - i >= BY2PG) {
+                syscall_mem_map(0, va, envid, phdr.p_vaddr + i, PTE_V | PTE_R);
+            } else {
+                seek(fd, phdr.p_offset + i);
+                syscall_mem_alloc(0, TMPPAGE, PTE_V | PTE_R);
+                readn(fd, TMPPAGE, phdr.p_filesz - i);
+                syscall_mem_map(0, TMPPAGE, envid, phdr.p_vaddr + i, PTE_V | PTE_R);
+                syscall_mem_unmap(0, TMPPAGE);
+            }
+        }
+        while (i < phdr.p_memsz) {
+            syscall_mem_alloc(envid, phdr.p_vaddr + i, PTE_V | PTE_R);
+            i += BY2PG;
+        }
+    }
 
     r = init_stack(envid, argv, &esp);
     if (r < 0) {
@@ -110,60 +138,14 @@ int spawn(char *prog, char **argv) {
         return r;
     }
 
-    size = ((struct Filefd *) num2fd(fd))->f_file.f_size;
+    struct Trapframe *tf = &(envs[ENVX(envid)].env_tf);
+    tf->regs[29] = esp;
+    tf->pc = UTEXT;
 
-    char *bin = 0x10000000;
-    int bpage = size / BY2PG + 1;
-    writef("Got a %d Byte binary, need %d page!\n", size, bpage);
-    int i;
-    for (i = 0; i <= bpage; i++) {
-        r = syscall_mem_alloc(0, bin + i * BY2PG, PTE_R);
-        writef("[SPAWN] mem alloc [%08x] %d\n", bin + i * BY2PG, r);
-        char buf[BY2PG];
-        read(fd, buf, BY2PG);
-        user_bcopy(buf, bin + i * BY2PG, BY2PG);
-    }
-    writef("%c%c%c magic\n", bin[1], bin[2], bin[3]);
-    r = syscall_env_spawn(envid, bin, size, esp);
-    struct Trapframe *ctf = &(envs[ENVX(envid)].env_tf);
-    ctf->regs[29] = esp;
-    ctf->pc = UTEXT;
-
-    writef("[SPAWN] syscall %d\n", r);
-
-    for (i = 0; i <= bpage; i++) {
-        r = syscall_mem_unmap(0, bin + i * BY2PG);
-        writef("[SPAWN] mem unmap [%08x] %d\n", bin + i * BY2PG, r);
-    }
-
-    close(fd);
-/*    int pn;
+    int pn;
     for (pn = 0; pn < (USTACKTOP / BY2PG) - 2; pn++) {
         if (((*vpd)[pn / PTE2PT]) != 0 && ((*vpt)[pn] & PTE_LIBRARY) != 0) {
             syscall_mem_map(0, pn * BY2PG, envid, pn * BY2PG, PTE_V | PTE_R | PTE_LIBRARY);
-            writef("map page va [%08x]\n", pn * BY2PG);
-        }
-    }*/
-    u_int pdeno = 0;
-    u_int pteno = 0;
-    u_int pn = 0;
-    u_int va = 0;
-
-    for (pdeno = 0; pdeno < PDX(UTOP); pdeno++) {
-        if (!((*vpd)[pdeno] & PTE_V))
-            continue;
-        for (pteno = 0; pteno <= PTX(~0); pteno++) {
-            pn = (pdeno << 10) + pteno;
-            if (((*vpt)[pn] & PTE_V) && ((*vpt)[pn] & PTE_LIBRARY)) {
-                va = pn * BY2PG;
-
-                if ((r = syscall_mem_map(0, va, envid, va, (PTE_V | PTE_R | PTE_LIBRARY))) < 0) {
-
-                    writef("va: %x   child_envid: %x   \n", va, envid);
-                    user_panic("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
-                    return r;
-                }
-            }
         }
     }
 
