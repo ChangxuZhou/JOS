@@ -109,16 +109,18 @@ serve_open(u_int envid, struct Fsreq_open *rq)
 
 	// Find a file id.
 	if ((r = open_alloc(&o)) < 0) {
-		user_panic("open_alloc failed: %d, invalid path: %s", r, path);
+        //user_panic("open_alloc failed: %d, invalid path: %s", r, path);
 		ipc_send(envid, r, 0, 0);
+        return;
 	}
 
 	fileid = r;
 
 	// Open the file.
 	if ((r = file_open((char *) path, &f)) < 0) {
-		user_panic("file_open failed: %d, invalid path: %s", r, path);
+        //user_panic("file_open failed: %d, invalid path: %s", r, path);
 		ipc_send(envid, r, 0, 0);
+        return;
 	}
 
 	// Save the file pointer.
