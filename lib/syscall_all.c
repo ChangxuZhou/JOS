@@ -335,40 +335,28 @@ static int load_icode_mapper(u_long va, u_int32_t sgsize,
     u_long i;
     int r;
     u_long offset = va - ROUNDDOWN(va, BY2PG);
-
-    //printf("\t\t\tcurrent offset %l8x\n", offset);
-    /*Step 1: load all content of bin into memory. */
     for (i = 0; i < bin_size; i += BY2PG) {
-        /* Hint: You should alloc a page and increase the reference count of it. */
         r = page_alloc(&p);
         if (r < 0) {
             panic("Allocate page failed.");
-            return r;
         }
-
         p->pp_ref++;
-
         r = page_insert(env->env_pgdir, p, va - offset + i, PTE_V | PTE_R);
         if (r < 0) {
             panic("Insert page failed.");
-            return r;
         }
         bcopy(bin + i, (void *) page2kva(p) + offset, MIN(BY2PG, bin_size - i));
     }
-    /*Step 2: alloc pages to reach `sgsize` when `bin_size` < `sgsize`.
-    * i has the value of `bin_size` now. */
     while (i < sgsize) {
         r = page_alloc(&p);
         if (r < 0) {
             panic("Allocate page failed.");
-            return r;
         }
         p->pp_ref++;
 
         r = page_insert(env->env_pgdir, p, va - offset + i, PTE_V | PTE_R);
         if (r < 0) {
             panic("Insert page failed.");
-            return r;
         }
         i += BY2PG;
     }
@@ -376,22 +364,30 @@ static int load_icode_mapper(u_long va, u_int32_t sgsize,
 }
 
 int sys_env_spawn(int sysno, u_int envid, char *binary, u_int size, u_int esp) {
-    struct Env *e;
+
     int r;
+    struct Env *e;
     u_int entry_point;
-    r = envid2env(envid, &e, 1);
+
+    r = env_alloc(&e, curenv->env_id);
     if (r < 0) {
-        printf("[ERR] sys_env_spawn : envid2env\n");
         return r;
     }
 
     r = load_elf(binary, size, &entry_point, e, load_icode_mapper);
     if (r < 0) {
         panic("Load elf failed.");
-    }/*
+    }
     e->env_tf.pc = entry_point;
-    e->env_tf.regs[29] = esp;*/
-    return 0;
+    e->env_tf.regs[29] = esp;
+
+    printf("e pc [%8x]\n", e->env_tf.pc);
+    printf("e ra [%8x]\n", e->env_tf.regs[31]);
+    printf("e sp [%8x]\n", e->env_tf.regs[29]);
+
+    e->env_status = ENV_NOT_RUNNABLE;
+    //e->env_tf.regs[2] = 0;
+    return e->env_id;
 }
 
 /* Overview:
