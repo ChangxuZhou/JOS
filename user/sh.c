@@ -182,7 +182,7 @@ runcmd(char *s)
 		return;
 	}
 	argv[argc] = 0;
-	if (1) {
+    if (0) {
 		writef("[%08x] SPAWN:", env->env_id);
 		for (i=0; argv[i]; i++)
 			writef(" %s", argv[i]);

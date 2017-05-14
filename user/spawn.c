@@ -87,7 +87,7 @@ int spawn(char *prog, char **argv) {
     int size;
     u_int esp;
 
-    writef("spawn:open %s my id %d\n", prog, ENVX(env->env_id));
+    //writef("spawn:open %s my id %d\n", prog, ENVX(env->env_id));
 
     fd = open(prog, O_RDONLY);
     if (fd < 0) {
@@ -155,7 +155,7 @@ int spawn(char *prog, char **argv) {
         return r;
     }
 
-    writef("Env spawn done!\n");
+    //writef("Env spawn done!\n");
     return envid;
 }
 
