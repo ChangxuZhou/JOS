@@ -18,6 +18,8 @@ static void user_out2string(void *arg, char *s, int l)
 int fwritef(int fd, const char *fmt, ...)
 {
 	char buf[512];
+    int i;
+    for (i = 0; i < 512; i++) buf[i] = 0;
 	va_list ap;
 	va_start(ap, fmt);
 	user_lp_Print(user_out2string, buf, fmt, ap);

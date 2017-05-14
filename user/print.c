@@ -40,7 +40,7 @@ user_lp_Print(void (*output)(void *, char *, int),
       (*output)(arg, s, l); \
     } \
   }
-    
+
     char buf[LP_MAX_BUF];
 
     char c;
@@ -56,158 +56,171 @@ user_lp_Print(void (*output)(void *, char *, int),
 
     int length;
 
-    for(;;) {
-	{ 
-	    /* scan for the next '%' */
-	    char *fmtStart = fmt;
-	    while ( (*fmt != '\0') && (*fmt != '%')) {
-		fmt ++;
-	    }
+    for (;;) {
+        {
+            /* scan for the next '%' */
+            char *fmtStart = fmt;
 
-	    /* flush the string found so far */
-	    OUTPUT(arg, fmtStart, fmt-fmtStart);
+            while ((*fmt != '\0') && (*fmt != '%')) {
+                fmt++;
+            }
 
-	    /* are we hitting the end? */
-	    if (*fmt == '\0') break;
-	}
+            /* flush the string found so far */
+            OUTPUT(arg, fmtStart, fmt - fmtStart);
 
-	/* we found a '%' */
-	fmt ++;
-	
-	/* check for long */
-	if (*fmt == 'l') {
-	    longFlag = 1;
-	    fmt ++;
-	} else {
-	    longFlag = 0;
-	}
+            /* are we hitting the end? */
+            if (*fmt == '\0') {
+                break;
+            }
+        }
 
-	/* check for other prefixes */
-	width = 0;
-	prec = -1;
-	ladjust = 0;
-	padc = ' ';
+        /* we found a '%' */
+        fmt++;
 
-	if (*fmt == '-') {
-	    ladjust = 1;
-	    fmt ++;
-	}
+        /* check for long */
+        if (*fmt == 'l') {
+            longFlag = 1;
+            fmt++;
+        } else {
+            longFlag = 0;
+        }
 
-	if (*fmt == '0') {
-	    padc = '0';
-	    fmt++;
-	}
+        /* check for other prefixes */
+        width = 0;
+        prec = -1;
+        ladjust = 0;
+        padc = ' ';
 
-	if (IsDigit(*fmt)) {
-	    while (IsDigit(*fmt)) {
-		width = 10 * width + Ctod(*fmt++);
-	    }
-	}
+        if (*fmt == '-') {
+            ladjust = 1;
+            fmt++;
+        }
 
-	if (*fmt == '.') {
-	    fmt ++;
-	    if (IsDigit(*fmt)) {
-		prec = 0;
-		while (IsDigit(*fmt)) {
-		    prec = prec*10 + Ctod(*fmt++);
-		}
-	    }
-	}
+        if (*fmt == '0') {
+            padc = '0';
+            fmt++;
+        }
+
+        if (IsDigit(*fmt)) {
+            while (IsDigit(*fmt)) {
+                width = 10 * width + Ctod(*fmt++);
+            }
+        }
+
+        if (*fmt == '.') {
+            fmt++;
+
+            if (IsDigit(*fmt)) {
+                prec = 0;
+
+                while (IsDigit(*fmt)) {
+                    prec = prec * 10 + Ctod(*fmt++);
+                }
+            }
+        }
 
 
-	/* check format flag */
-	negFlag = 0;
-	switch (*fmt) {
-	 case 'b':
-	    if (longFlag) { 
-		num = va_arg(ap, long int); 
-	    } else { 
-		num = va_arg(ap, int);
-	    }
-	    length = user_PrintNum(buf, num, 2, 0, width, ladjust, padc, 0);
-	    OUTPUT(arg, buf, length);
-	    break;
+        /* check format flag */
+        negFlag = 0;
 
-	 case 'd':
-	 case 'D':
-	    if (longFlag) { 
-		num = va_arg(ap, long int);
-	    } else { 
-		num = va_arg(ap, int); 
-	    }
-	    if (num < 0) {
-		num = - num;
-		negFlag = 1;
-	    }
-	    length = user_PrintNum(buf, num, 10, negFlag, width, ladjust, padc, 0);
-	    OUTPUT(arg, buf, length);
-	    break;
+        switch (*fmt) {
+            case 'b':
+                if (longFlag) {
+                    num = va_arg(ap, long int);
+                } else {
+                    num = va_arg(ap, int);
+                }
 
-	 case 'o':
-	 case 'O':
-	    if (longFlag) { 
-		num = va_arg(ap, long int);
-	    } else { 
-		num = va_arg(ap, int); 
-	    }
-	    length = user_PrintNum(buf, num, 8, 0, width, ladjust, padc, 0);
-	    OUTPUT(arg, buf, length);
-	    break;
+                length = user_PrintNum(buf, num, 2, 0, width, ladjust, padc, 0);
+                OUTPUT(arg, buf, length);
+                break;
 
-	 case 'u':
-	 case 'U':
-	    if (longFlag) { 
-		num = va_arg(ap, long int);
-	    } else { 
-		num = va_arg(ap, int); 
-	    }
-	    length = user_PrintNum(buf, num, 10, 0, width, ladjust, padc, 0);
-	    OUTPUT(arg, buf, length);
-	    break;
-	    
-	 case 'x':
-	    if (longFlag) { 
-		num = va_arg(ap, long int);
-	    } else { 
-		num = va_arg(ap, int); 
-	    }
-	    length = user_PrintNum(buf, num, 16, 0, width, ladjust, padc, 0);
-	    OUTPUT(arg, buf, length);
-	    break;
+            case 'd':
+            case 'D':
+                if (longFlag) {
+                    num = va_arg(ap, long int);
+                } else {
+                    num = va_arg(ap, int);
+                }
 
-	 case 'X':
-	    if (longFlag) { 
-		num = va_arg(ap, long int);
-	    } else { 
-		num = va_arg(ap, int); 
-	    }
-	    length = user_PrintNum(buf, num, 16, 0, width, ladjust, padc, 1);
-	    OUTPUT(arg, buf, length);
-	    break;
+                if (num < 0) {
+                    num = -num;
+                    negFlag = 1;
+                }
 
-	 case 'c':
-	    c = (char)va_arg(ap, int);
-	    length = user_PrintChar(buf, c, width, ladjust);
-	    OUTPUT(arg, buf, length);
-	    break;
+                length = user_PrintNum(buf, num, 10, negFlag, width, ladjust, padc, 0);
+                OUTPUT(arg, buf, length);
+                break;
 
-	 case 's':
-	    s = (char*)va_arg(ap, char *);
-	    length = user_PrintString(buf, s, width, ladjust);
-	    OUTPUT(arg, buf, length);
-	    break;
+            case 'o':
+            case 'O':
+                if (longFlag) {
+                    num = va_arg(ap, long int);
+                } else {
+                    num = va_arg(ap, int);
+                }
 
-	 case '\0':
-	    fmt --;
-	    break;
+                length = user_PrintNum(buf, num, 8, 0, width, ladjust, padc, 0);
+                OUTPUT(arg, buf, length);
+                break;
 
-	 default:
-	    /* output this char as it is */
-	    OUTPUT(arg, fmt, 1);
-	}	/* switch (*fmt) */
+            case 'u':
+            case 'U':
+                if (longFlag) {
+                    num = va_arg(ap, long int);
+                } else {
+                    num = va_arg(ap, int);
+                }
 
-	fmt ++;
-    }		/* for(;;) */
+                length = user_PrintNum(buf, num, 10, 0, width, ladjust, padc, 0);
+                OUTPUT(arg, buf, length);
+                break;
+
+            case 'x':
+                if (longFlag) {
+                    num = va_arg(ap, long int);
+                } else {
+                    num = va_arg(ap, int);
+                }
+
+                length = user_PrintNum(buf, num, 16, 0, width, ladjust, padc, 0);
+                OUTPUT(arg, buf, length);
+                break;
+
+            case 'X':
+                if (longFlag) {
+                    num = va_arg(ap, long int);
+                } else {
+                    num = va_arg(ap, int);
+                }
+
+                length = user_PrintNum(buf, num, 16, 0, width, ladjust, padc, 1);
+                OUTPUT(arg, buf, length);
+                break;
+
+            case 'c':
+                c = (char) va_arg(ap, int);
+                length = user_PrintChar(buf, c, width, ladjust);
+                OUTPUT(arg, buf, length);
+                break;
+
+            case 's':
+                s = (char *) va_arg(ap, char *);
+                length = user_PrintString(buf, s, width, ladjust);
+                OUTPUT(arg, buf, length);
+                break;
+
+            case '\0':
+                fmt--;
+                break;
+
+            default:
+                /* output this char as it is */
+            OUTPUT(arg, fmt, 1);
+        }    /* switch (*fmt) */
+
+        fmt++;
+    }        /* for(;;) */
 
     /* special termination call */
     OUTPUT(arg, "\0", 1);

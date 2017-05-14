@@ -87,12 +87,17 @@ int spawn(char *prog, char **argv) {
     int size;
     u_int esp;
 
+    int len = strlen(prog);
+    if (prog[len - 2] != '.' && prog[len - 1] != 'b') {
+        writef("Do you mean `%s.b`?\n", prog);
+        return -1;
+    }
     //writef("spawn:open %s my id %d\n", prog, ENVX(env->env_id));
 
     fd = open(prog, O_RDONLY);
     if (fd < 0) {
-        writef("spawn:open %s:%d\n", prog, fd);
-        return -1;
+        //writef("spawn:open %s:%d\n", prog, fd);
+        return fd;
     }
 
     u_int envid = syscall_env_alloc();
@@ -131,9 +136,9 @@ int spawn(char *prog, char **argv) {
         }
     }
 
+    close(fd);
     r = init_stack(envid, argv, &esp);
     if (r < 0) {
-        close(fd);
         writef("[ERR] spawn.c : spawn : init_stack\n");
         return r;
     }

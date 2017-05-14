@@ -178,25 +178,16 @@ runcmd(char *s)
 
 	runit:
 	if(argc == 0) {
-		if (debug) writef("EMPTY COMMAND\n");
 		return;
 	}
 	argv[argc] = 0;
-    if (0) {
-		writef("[%08x] SPAWN:", env->env_id);
-		for (i=0; argv[i]; i++)
-			writef(" %s", argv[i]);
-		writef("\n");
-	}
 	if ((r = spawn(argv[0], argv)) < 0)
 		writef("spawn %s: %e\n", argv[0], r);
 	close_all();
 	if (r >= 0) {
-		if (debug) writef("[%08x] WAIT %s %08x\n", env->env_id, argv[0], r);
 		wait(r);
 	}
 	if (rightpipe) {
-		if (debug) writef("[%08x] WAIT right-pipe %08x\n", env->env_id, rightpipe);
 		wait(rightpipe);
 	}
 	exit();
